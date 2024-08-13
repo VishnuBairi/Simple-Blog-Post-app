@@ -5,11 +5,15 @@ const jwt=require("jsonwebtoken");
 const userModel = require("./models/user");
 const postModel= require("./models/post");
 const bcrypt=require("bcrypt");
+const upload=require("./config/multerconfig");
+const path = require("path");
 
 app.set("view engine","ejs");
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname,"public")));
+
 
 app.get("/",(req,res)=>{
     res.render("home");
@@ -92,7 +96,15 @@ app.post("/updatePost/:id",isLoggedIn,async(req,res)=>{
     let post= await postModel.findOneAndUpdate({_id:req.params.id},{content:req.body.content})
     res.redirect("/profile");
 })
-
+app.get("/profile/upload",(req,res)=>{
+    res.render("file");
+})
+app.post("/uploadFile",isLoggedIn,upload.single("image"),async(req,res)=>{
+    let userprofile=await userModel.findOne({email:req.user.email});
+    userprofile.profilepic=req.file.filename;
+    await userprofile.save();
+    res.redirect("/profile");
+})
  function isLoggedIn(req,res,next){
     if(req.cookies.token=="")res.redirect("/login");
     else{
